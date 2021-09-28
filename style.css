@@ -9,6 +9,7 @@ body {
     justify-content: center;
     margin: 0px;
     padding: 0px;
+    padding-top: 100px;
     background-color: #303030;
 }
 
@@ -22,7 +23,7 @@ body {
 
 .slide {
     overflow: hidden;
-    margin-top: 100px;
+    margin: 10px 0px;
     height: 200px;
     background-color: aquamarine;
     white-space: nowrap;

@@ -1,6 +1,8 @@
 const chaveApi = 'c6f2e394cb2b4280a46ada2151482eac';
 
-// console.log(chaveApi);
+const arrayGenres = [ 'action', 'indie', 'adventure', 'role-playing-games-rpg', 'shooter', 'racing', 'fighting'];
+const arrayConsoles = ['pc', 'playstation5', "xbox-series-x", 'nintendo-switch'];
+
 
 let eixoX = [];
 
@@ -28,7 +30,6 @@ function criarDivJogo(classe, texto) {
 function criarCategoria(nomeCategoria) {
   const { slug, id, games} = nomeCategoria;
   eixoX.push(0);
-  console.log(slug);
   const eixoXIndex = eixoX.length - 1;
   const categoriaDiv = document.createElement("div");
   categoriaDiv.classList.add("categorias");
@@ -72,13 +73,47 @@ function carrossel(direcao, categoria, eixoXIndex) {
   caixa.style.transform = `translateX(${-eixoX[eixoXIndex] * larCont}px)`;
 }
 
-window.onload = async () => {
+function headers() {
   myHeaders = new Headers();
   myHeaders.append("Content-Type", "application/json");
-  const response = await fetch(`https://api.rawg.io/api/platforms?key=${chaveApi}`, {
+  return {
       method: 'GET',
       headers: myHeaders,
-  });
-  const objeto = await response.json();
-  objeto.results.forEach((plataforma) => criarCategoria(plataforma));
+  }
+}
+
+async function getInfo(urlApi, arrayCheck) {
+    const response = await fetch(urlApi, headers());
+    const elementos = await response.json();
+    return elementos.results.filter((elemente) => arrayCheck.includes(elemente.slug));
+}
+
+async function getGames(urlApi) {
+    let retorno = [];
+    let nextPage = '';
+    let response;
+    for (let index = 0; index < 281; index += 40) {
+        if(index === 0){
+            response = await fetch(urlApi, headers());
+        } else {
+            response = await fetch(nextPage, headers());
+        }
+        const elementos = await response.json();
+        nextPage = elementos.next;
+        retorno.concat(elementos.results);
+    }
+    return retorno;
+}
+
+window.onload = async () => {
+    const data = new Date();
+    const todayDate = `${data.getFullYear()}-${(data.getMonth()+1).toString().padStart(2,'0')}-${data.getDate()}`;
+    const ultimosSeisAnos = `${data.getFullYear()-6}-${(data.getMonth()+1).toString().padStart(2,'0')}-${data.getDate()}`;
+    const objetoGeneros = await getInfo(`https://api.rawg.io/api/genres?key=${chaveApi}`, arrayGenres);
+    const objetoPlataformas = await getInfo(`https://api.rawg.io/api/platforms?key=${chaveApi}`, arrayConsoles);
+    
+    const stringPlataformas = objetoPlataformas.map((plataforma) => plataforma.id).join(',');
+    const stringGeneros = objetoGeneros.map((genero) => genero.id).join(',');
+
+    const objetoGames = await getGames(`https://api.rawg.io/api/games?key=${chaveApi}&genres=${stringGeneros}&platforms=${stringPlataformas}&dates=${todayDate}.${ultimosSeisAnos}&page_size=40`);
 };

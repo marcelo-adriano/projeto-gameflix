@@ -1,28 +1,50 @@
+const principal = document.querySelector('main');
 const chaveApi = 'c6f2e394cb2b4280a46ada2151482eac';
 
-const arrayGenres = [ 'action', 'indie', 'adventure', 'role-playing-games-rpg', 'shooter', 'racing', 'fighting'];
-const arrayConsoles = ['pc', 'playstation5', "xbox-series-x", 'nintendo-switch'];
+const stringGenres = '4,51,3,5,2,1,6';
+const stringConsoles = '4,187,18,1,186,7';
 
+const data = new Date();
+const todayDate = `${data.getFullYear()}-${(data.getMonth()+1).toString().padStart(2,'0')}-${data.getDate()}`;
+const ultimosSeisAnos = `${data.getFullYear()-6}-${(data.getMonth()+1).toString().padStart(2,'0')}-${data.getDate()}`;
 
 let eixoX = [];
 
-function criarBotao(idDoPai, classes, texto, eixoXIndex) {
+function criarBotao(classeDoPai, classes, texto, eixoXIndex) {
   const botao = document.createElement("button");
   classes.forEach((classe) => botao.classList.add(classe));
   botao.innerText = texto;
   let direcao = classes.includes("antes") ? -1 : 1;
 
   botao.addEventListener("click", () =>
-    carrossel(direcao, idDoPai, eixoXIndex)
+    carrossel(direcao, classeDoPai, eixoXIndex)
   );
 
   return botao;
 }
 
-function criarDivJogo(classe, texto) {
+function criarDivJogo(classe, objeto) {
   const gameDiv = document.createElement("div");
   gameDiv.classList.add(classe);
-  gameDiv.innerText = texto;
+  gameDiv.classList.add(objeto.id);
+  // console.log(gameDiv.classList[1]);
+  gameDiv.style.backgroundImage = `url(${objeto.background_image})`;
+  
+  const spanName = document.createElement('span');
+  spanName.innerText = objeto.name;
+  spanName.classList.add('name-game');
+
+  gameDiv.appendChild(spanName);
+
+  // const gameDescription = document.createElement('p');
+  // spanName.innerText = objeto.des;
+  // spanName.classList.add('name-game');
+  
+  const spanMetacritic = document.createElement('span');
+  spanMetacritic.innerText = objeto.metacritic;
+  spanMetacritic.classList.add('score-game');
+
+  gameDiv.appendChild(spanMetacritic);
 
   return gameDiv;
 }
@@ -32,7 +54,7 @@ function criarCategoria(nomeCategoria, jogos) {
   const eixoXIndex = eixoX.length - 1;
   const categoriaDiv = document.createElement("div");
   categoriaDiv.classList.add("categorias");
-  categoriaDiv.id = nomeCategoria;
+  categoriaDiv.classList.add(nomeCategoria);
   categoriaDiv.appendChild(criarBotao(nomeCategoria, ["botao", "antes"], "<", eixoXIndex));
 
   const slideDiv = document.createElement("div");
@@ -40,7 +62,8 @@ function criarCategoria(nomeCategoria, jogos) {
   const containerDiv = document.createElement("div");
   containerDiv.classList.add("container");
   jogos.forEach((jogo) => {
-    containerDiv.appendChild(criarDivJogo("block", jogo.name));
+    const jogoDiv = criarDivJogo("block", jogo);
+    containerDiv.appendChild(jogoDiv);
   });
   slideDiv.appendChild(containerDiv);
   categoriaDiv.appendChild(slideDiv);
@@ -48,13 +71,22 @@ function criarCategoria(nomeCategoria, jogos) {
     criarBotao(nomeCategoria, ["botao", "depois"], ">", eixoXIndex)
   );
 
-  document.body.appendChild(categoriaDiv);
+  const category = document.createElement('span');
+  category.classList.add('categorySubtitle');
+  let categoriaNomeBonito = '';
+  if(nomeCategoria === 'aclamados-critica') categoriaNomeBonito = 'Aclamados Pela Crítica';
+  else if(nomeCategoria === 'role-playing-games-rpg') categoriaNomeBonito = 'RPG';
+  else categoriaNomeBonito = nomeCategoria;
+  category.innerText = categoriaNomeBonito;
+
+  principal.appendChild(category);
+  principal.appendChild(categoriaDiv);
 }
 
 function carrossel(direcao, categoria, eixoXIndex) {
-  const boxes = document.querySelectorAll(`#${categoria} .block`);
+  const boxes = document.querySelectorAll(`.${categoria} .block`);
   const aBox = boxes[boxes.length - 1];
-  const caixa = document.querySelector(`#${categoria} .container`);
+  const caixa = document.querySelector(`.${categoria} .container`);
   const larCont = caixa.clientWidth;
   const margin = parseInt(getComputedStyle(aBox).marginLeft, 10) * 2;
   const larBlk = (aBox.offsetWidth + margin) * boxes.length;
@@ -89,11 +121,8 @@ async function getGames(urlApi) {
     let nextPage = '';
     let response;
     for (let index = 0; index < 6; index += 1) {
-        if(index === 0){
-            response = await fetch(urlApi, headers());
-        } else {
-            response = await fetch(nextPage, headers());
-        }
+        const urlRequest = index === 0 ? urlApi : nextPage;
+        response = await fetch(urlRequest, headers());
         const elementos = await response.json();
         nextPage = elementos.next;
         retorno = retorno.concat(elementos.results);
@@ -102,22 +131,20 @@ async function getGames(urlApi) {
 }
 
 window.onload = async () => {
-    const data = new Date();
-    const todayDate = `${data.getFullYear()}-${(data.getMonth()+1).toString().padStart(2,'0')}-${data.getDate()}`;
-    const ultimosSeisAnos = `${data.getFullYear()-6}-${(data.getMonth()+1).toString().padStart(2,'0')}-${data.getDate()}`;
-    const objetoGeneros = await getInfo(`https://api.rawg.io/api/genres?key=${chaveApi}`, arrayGenres);
-    const objetoPlataformas = await getInfo(`https://api.rawg.io/api/platforms?key=${chaveApi}`, arrayConsoles);
-    
-    const stringPlataformas = objetoPlataformas.map((plataforma) => plataforma.id).join(',');
-    const stringGeneros = objetoGeneros.map((genero) => genero.id).join(',');
-
-    const objetoGames = await getGames(`https://api.rawg.io/api/games?key=${chaveApi}&genres=${stringGeneros}&platforms=${stringPlataformas}&dates=${todayDate}.${ultimosSeisAnos}&page_size=40`);
-
-    const objetoGamesMetacritic = await getGames(`https://api.rawg.io/api/games?key=${chaveApi}&genres=${stringGeneros}&platforms=${stringPlataformas}&dates=${todayDate}.${ultimosSeisAnos}&metacritic=96,100&page_size=1`);
-    
+    const objetoGamesMetacritic = await getGames(`https://api.rawg.io/api/games?key=${chaveApi}&genres=${stringGenres}&platforms=${stringConsoles}&dates=${todayDate}.${ultimosSeisAnos}&metacritic=96,100&page_size=1`);
     criarCategoria('aclamados-critica', objetoGamesMetacritic);
-    arrayGenres.forEach((genre) => criarCategoria(genre, objetoGames.filter((game, index) => {
-        return game.genres.some((genero) => genero.slug === genre) && index < 50;
-    })));
+
+    const objetoGames = await getGames(`https://api.rawg.io/api/games?key=${chaveApi}&genres=${stringGenres}&platforms=${stringConsoles}&dates=${todayDate}.${ultimosSeisAnos}&page_size=40`);
+    stringGenres.split(',').forEach((genre) => {
+      let contador = 0;
+      const gamesChoosed = objetoGames.filter((game) => {
+        return game.genres.some((genero) => {
+          contador = genero.id === parseInt(genre, 10) ? contador + 1 : contador;
+          return genero.id === parseInt(genre, 10);
+        }) && contador < 20;
+      });
+      const genreSlug = gamesChoosed[0].genres.find((elemento) => elemento.id === parseInt(genre, 10));
+      criarCategoria(genreSlug.slug, gamesChoosed);
+    });
 
 };

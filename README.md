@@ -33,7 +33,8 @@ Projeto tenta criar um simulacro de Netflix, mas sobre jogos.
 - [ ] 5.4 - Publisher;
 - [ ] 5.5 - ESRB rating(Classificação indicativa)
 - [ ] 6 - Criar tela de loading;
-- [ ] 
+- [ ] 7 - Armazenar informações no localStorage.
+- [ ] 8 - Refatorar o código para criar treads paralelas.
 - [ ] 
 
 

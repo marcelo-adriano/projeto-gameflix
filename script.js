@@ -27,29 +27,25 @@ function criarDivJogo(classe, texto) {
   return gameDiv;
 }
 
-function criarCategoria(nomeCategoria) {
-  const { slug, id, games} = nomeCategoria;
+function criarCategoria(nomeCategoria, jogos) {
   eixoX.push(0);
   const eixoXIndex = eixoX.length - 1;
   const categoriaDiv = document.createElement("div");
   categoriaDiv.classList.add("categorias");
-  categoriaDiv.id = slug;
-  categoriaDiv.appendChild(
-    criarBotao(slug, ["botao", "antes"], "<", eixoXIndex)
-  );
+  categoriaDiv.id = nomeCategoria;
+  categoriaDiv.appendChild(criarBotao(nomeCategoria, ["botao", "antes"], "<", eixoXIndex));
 
   const slideDiv = document.createElement("div");
   slideDiv.classList.add("slide");
   const containerDiv = document.createElement("div");
   containerDiv.classList.add("container");
-  const numeroMax = games.length;
-  games.forEach((game) => {
-    containerDiv.appendChild(criarDivJogo("block", game.name));
+  jogos.forEach((jogo) => {
+    containerDiv.appendChild(criarDivJogo("block", jogo.name));
   });
   slideDiv.appendChild(containerDiv);
   categoriaDiv.appendChild(slideDiv);
   categoriaDiv.appendChild(
-    criarBotao(slug, ["botao", "depois"], ">", eixoXIndex)
+    criarBotao(nomeCategoria, ["botao", "depois"], ">", eixoXIndex)
   );
 
   document.body.appendChild(categoriaDiv);
@@ -92,7 +88,7 @@ async function getGames(urlApi) {
     let retorno = [];
     let nextPage = '';
     let response;
-    for (let index = 0; index < 281; index += 40) {
+    for (let index = 0; index < 6; index += 1) {
         if(index === 0){
             response = await fetch(urlApi, headers());
         } else {
@@ -100,7 +96,7 @@ async function getGames(urlApi) {
         }
         const elementos = await response.json();
         nextPage = elementos.next;
-        retorno.concat(elementos.results);
+        retorno = retorno.concat(elementos.results);
     }
     return retorno;
 }
@@ -116,4 +112,12 @@ window.onload = async () => {
     const stringGeneros = objetoGeneros.map((genero) => genero.id).join(',');
 
     const objetoGames = await getGames(`https://api.rawg.io/api/games?key=${chaveApi}&genres=${stringGeneros}&platforms=${stringPlataformas}&dates=${todayDate}.${ultimosSeisAnos}&page_size=40`);
+
+    const objetoGamesMetacritic = await getGames(`https://api.rawg.io/api/games?key=${chaveApi}&genres=${stringGeneros}&platforms=${stringPlataformas}&dates=${todayDate}.${ultimosSeisAnos}&metacritic=96,100&page_size=1`);
+    
+    criarCategoria('aclamados-critica', objetoGamesMetacritic);
+    arrayGenres.forEach((genre) => criarCategoria(genre, objetoGames.filter((game, index) => {
+        return game.genres.some((genero) => genero.slug === genre) && index < 50;
+    })));
+
 };
